@@ -1,0 +1,421 @@
+====================arifController    WebApi---------------
+
+using MvcApplication1.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Web.Http;
+using AttributeRouting;
+using AttributeRouting.Web.Http;
+using System.Data.Entity.Infrastructure;
+using System.Data;
+
+
+namespace MvcApplication1.Controllers
+{
+   // [ApiAuthenticationFilter]
+    public class arifController : ApiController
+    {
+        Inventory_MVC2Entities db;
+        public arifController()
+        {
+            db = new Inventory_MVC2Entities();
+        }
+
+     
+
+       // [GET("allproducts")]
+      
+        public HttpResponseMessage Get()
+        {
+           
+
+            return Request.CreateResponse(HttpStatusCode.OK, db.nodejs.ToList());
+            return Request.CreateErrorResponse(HttpStatusCode.NotFound, "Products not found");
+        }
+
+  
+    
+        public HttpResponseMessage Get(int id)
+        {
+            var product = db.nodejs.Where((p) => p.MOBILENO == id);
+            if (product == null)
+            {
+                var message = string.Format("Product with id = {0} not found", id);
+                return Request.CreateErrorResponse(HttpStatusCode.NotFound, message);
+            }
+            else
+            {
+                return Request.CreateResponse(HttpStatusCode.OK, product);
+            }
+        }
+        
+        public HttpResponseMessage Post([FromBody] nodej t1)
+        {
+            if (t1 == null)
+            {
+                var message = string.Format("Product is not save ");
+                return Request.CreateErrorResponse(HttpStatusCode.NotFound, message);
+            }
+            else
+            {
+                db.nodejs.Add(t1);
+               // db.AddTosps(em);
+                db.SaveChanges(); 
+
+                var firstName = t1.FirstName;
+                var midileName = t1.MIDILENAME;
+                var lastname = t1.LastName;
+                var product = db.nodejs.Where((p) => p.MOBILENO == 45);
+                return Request.CreateResponse(HttpStatusCode.OK, db.nodejs.ToList());
+            }
+         
+        }
+        public HttpResponseMessage Put(int id, nodej t1)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState);
+            }
+            if (id != t1.MOBILENO)
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            }
+            db.Entry(t1).State = EntityState.Modified;
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.NotFound, ex);
+            }
+            return Request.CreateResponse(HttpStatusCode.OK);
+           
+           // return Request.CreateResponse(HttpStatusCode.OK,"save Recoread");
+           
+
+        }
+       
+
+
+        //delete customer by id
+        public HttpResponseMessage Delete(int id)
+        {
+            nodej customer = db.nodejs.Find(id);
+            if (customer == null)
+            {
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+            }
+            db.nodejs.Remove(customer);
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.NotFound, ex);
+            }
+            return Request.CreateResponse(HttpStatusCode.OK, customer);
+        }
+
+    }
+}
+
+//==================================== reger sphtml---
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+        <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+  
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    
+<script>
+    var app = angular.module('myApp', []);
+    app.controller('myCtrl', ['$scope', '$http', function ($scope, $http) {
+     
+
+
+        $scope.model = [];
+        $scope.Status = {
+            Showform: false
+        };
+
+
+        //====================================================================All Recor Get 
+
+        $http.get('http://localhost:12196/api/arif').success(function (data) {
+            debugger;
+            // var v=data.Employees[2];
+
+            $scope.model = data;
+        });
+        $scope.ShowForm = function (IsTrue) {
+            $scope.Status.Showform = IsTrue;
+        };
+
+        $scope.new =
+            {
+                Emp: {}
+            };
+        //==================================================== Save new Recor
+        $scope.SaveRecord = function () {
+
+            $http.post("http://localhost:12196/api/arif", $scope.new.Emp).success(function (data) {
+                $scope.model = data;
+                $scope.ShowForm(false);
+                $scope.new.Emp = {};
+            });
+        };
+        //=============================================================Update
+        $scope.UpdateRecord = function (record) {
+            var id = record.MOBILENO;
+            $http.put("http://localhost:12196/api/arif/"+ id,record).success(function (data) {
+                debugger;
+              //  $scope.model = data;
+              //  $scope.ShowForm(false);
+              //  $scope.new.Emp = {};
+
+                alert("Saved Successfully!!");
+                record.editMode = false;
+                $scope.loading = false;
+
+
+
+            }).error(function (data) {
+                $scope.error = "An Error has occured while Saving customer! " + data;
+                $scope.loading = false;
+            });
+        };
+
+        //====================================================================All Delete 
+        $scope.DeleteRecord = function (data) {
+            var id = data.MOBILENO;
+            debugger;
+
+            $scope.loading = true;
+          //  var Id = this.data.MOBILENO;
+            $http.delete('http://localhost:12196/api/arif/' + id).success(function (data) {
+                alert("Deleted Successfully!!");
+                $.each($scope.model, function (i) {
+                    if ($scope.model[i].MOBILENO === id) {
+                        $scope.model.splice(i, 1);
+                        return false;
+                    }
+                });
+                $scope.loading = false;
+               // $scope.model = data;
+            }).error(function (data) {
+                $scope.error = "An Error has occured while Saving Customer! " + data;
+                $scope.loading = false;
+            });
+        };
+        //=================================================================================================
+        // $scope.friend.editMode = false;
+        $scope.loading = true;
+        $scope.addMode = false;
+
+        //======================================================Edit ===============
+        $scope.toggleEdit = function () {
+            debugger;
+            this.item.editMode = !this.item.editMode
+
+        }
+        //======================================================================= Short
+        //$scope.sort = function (keyname) {
+        //    debugger;
+        //    $scope.sortKey = keyname;   //set the sortKey to the param passed
+        //    $scope.reverse = !$scope.reverse; //if true make it false and vice versa
+        //}
+        $scope.sort = function (keyname) {
+            $scope.sortKey = keyname;   //set the sortKey to the param passed
+            $scope.reverse = !$scope.reverse; //if true make it false and vice versa
+        }
+        ///////////////////
+
+
+
+        $scope.EditRecord = function (data) {
+            debugger;
+            $scope.editname = data.FirstName;
+            $scope.lastname = data.LastName;
+            $scope.midilename = data.MIDILENAME;
+            $scope.data = data.EMAIL;
+            $scope.mobileno = data.MOBILENO;
+            $scope.fathername = data.FATHERNAME
+
+
+        };
+    }]);
+</script>
+
+</head>
+<body>
+    <div>
+        <h1>dddddddd</h1>
+        <div ng-app="myApp" ng-controller="myCtrl">
+   <table class="table">
+                   
+
+
+                    	<thead>
+						<tr>
+							<th ng-click="sort('FirstName')">FirstName
+								<span class="glyphicon sort-icon" ng-show="sortKey=='id'" ng-class="{'glyphicon-chevron-up':reverse,'glyphicon-chevron-down':!reverse}"></span>
+							</th>
+							<th ng-click="sort('LastName')">LastName
+								<span class="glyphicon sort-icon" ng-show="sortKey=='first_name'" ng-class="{'glyphicon-chevron-up':reverse,'glyphicon-chevron-down':!reverse}"></span>
+							</th>
+							<th ng-click="sort('MIDILENAME')">MIDILENAME
+								<span class="glyphicon sort-icon" ng-show="sortKey=='last_name'" ng-class="{'glyphicon-chevron-up':reverse,'glyphicon-chevron-down':!reverse}"></span>
+							</th>
+							<th ng-click="sort('EMAIL')">EMAI
+								<span class="glyphicon sort-icon" ng-show="sortKey=='hobby'" ng-class="{'glyphicon-chevron-up':reverse,'glyphicon-chevron-down':!reverse}"></span>
+							</th>
+                            <th ng-click="sort('MOBILENO')">MOBILENO
+								<span class="glyphicon sort-icon" ng-show="sortKey=='hobby'" ng-class="{'glyphicon-chevron-up':reverse,'glyphicon-chevron-down':!reverse}"></span>
+							</th>
+                            <th ng-click="sort('FATHERNAME')">FATHERNAME
+								<span class="glyphicon sort-icon" ng-show="sortKey=='hobby'" ng-class="{'glyphicon-chevron-up':reverse,'glyphicon-chevron-down':!reverse}"></span>
+							</th>
+						</tr>
+					</thead>
+
+
+ 
+                        
+                     <tr ng-repeat="item in model   ">
+
+                        <td><p ng-hide="item.editMode">{{item.FirstName}}</p>
+                             <input ng-show="item.editMode" ng-model="item.FirstName"  type="text"  />
+                        </td>
+                        <td><p ng-hide="item.editMode">{{item.LastName }}</p>
+                            <input ng-show="item.editMode" type="text" ng-model="item.LastName" /> 
+                        </td>
+                        <td><p ng-hide="item.editMode">{{item.MIDILENAME}}
+                                <input ng-show="item.editMode" type="text" ng-model="item.MIDILENAME" />
+                            </p>
+
+                        </td>
+                        <td><p ng-hide="item.editMode">{{item.EMAIL}}</p>
+                          <input ng-show="item.editMode" type="text" ng-model="item.EMAIL" />
+                        </td>
+                          <td><p >{{item.MOBILENO}}</p>
+                              
+                          </td>
+                          <td><p ng-hide="item.editMode">{{item.FATHERNAME}}</p>
+                                <input ng-show="item.editMode" type="text" ng-model="item.FATHERNAME" />
+                          </td>
+                        <td><input type="button" ng-hide="item.editMode" class="btn btn-danger" value="Delete" ng-click="DeleteRecord(item)" />
+                            <input type="button"  ng-click="UpdateRecord(item)" ng-show="item.editMode" class="btn btn-primary" value="Save"  />
+                        </td>
+                          <td><input type="button" ng-hide="item.editMode"   data-ng-click="toggleEdit(item)"  class="btn btn-primary" value="Edit"  />
+                        <input type="button" ng-show="item.editMode" data-ng-click="toggleEdit(item)"    class="btn btn-default" value="Cancel"  />
+                          </td>
+                          </tr>
+                    
+
+                      
+
+
+
+
+
+
+
+
+                    <tr ng-if="Status.Showform">
+                      <td>
+                            <input placeholder="Enter Id" ng-model="new.Emp.FirstName" />
+                        </td>
+             
+                        <td>
+                            <input placeholder="Enter Name" ng-model="new.Emp.LastName" />
+                        </td>
+                        <td>
+                            <input placeholder="Enter Salary" ng-model="new.Emp.MIDILENAME" />
+                        </td>
+                        <td>
+                            <input placeholder="Enter DptId" ng-model="new.Emp.EMAIL" />
+                        </td>
+                        <td>
+                            <input placeholder="Enter DptId" ng-model="new.Emp.MOBILENO" />
+                        </td>
+                        <td>
+                            <input placeholder="Enter DptId" ng-model="new.Emp.FATHERNAME" />
+                        </td>
+                        <td><input type="button" class="btn btn-primary" value="Save" ng-click="SaveRecord()" />
+                      
+
+                        </td>
+                        <td><input type="button" class="btn btn-default" value="Cancel" ng-click="ShowForm(false)" /></td>
+                    </tr>
+
+
+
+
+
+                    <tbody ng-show="true">
+	<tr>
+		<td colspan="2" class="text-center">Loading ... </td>
+	</tr>
+	</tbody>
+	<tfoot>
+	<tr>
+		<td class="text-center" st-pagination="2" st-items-by-page="3" colspan="2">
+		</td>
+	</tr>
+	</tfoot>
+
+
+
+
+                </table>
+              <p><input type="button" class="btn btn-primary" value="Add New" ng-click="ShowForm(true)" /></p>
+                <input type="text" />
+            <br />
+            <input type="button" ng-click=" UpdateRecord()" value="upload" />
+
+
+</div>
+    </div>
+</body>
+</html>
+
+//======================================  spController  -------
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+
+namespace MvcApplication2.Controllers
+{
+    public class spController : Controller
+    {
+        //
+        // GET: /sp/
+
+        public ActionResult Index()
+        {
+            return View();
+        }
+
+    }
+}
